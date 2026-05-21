@@ -138,6 +138,25 @@ tr:hover td { background: #fafafa; }
 .nav-sync { background: none; border: none; font-size: 18px; cursor: pointer; margin-left: auto; padding: 4px 6px; }
 .nav-sync.synced { color: #34c759; }
 .nav-sync.unsynced { color: var(--text3); }
+
+/* 渠道列不换行 */
+td:nth-child(3), th:nth-child(3) { white-space: nowrap; }
+
+/* 打印样式 */
+@media print {
+  body { background: #fff; }
+  .nav, canvas, .btn, .form-row, .notice, .stat-grid,
+  .chart-container, .chart-container-sm { display: none !important; }
+  .card { box-shadow: none; break-inside: avoid; padding: 10px 0; margin-bottom: 8px; }
+  .card-title { font-size: 15px; margin-bottom: 8px; }
+  .tbl-wrap { overflow: visible; }
+  table { font-size: 11px; }
+  th, td { padding: 4px 6px; }
+  #ov-stats-card { display: none !important; }
+  #monthly-year { display: none !important; }
+  .page { display: none !important; }
+  .page.active { display: block !important; }
+}
 </style>
 </head>
 <body>
@@ -162,7 +181,7 @@ tr:hover td { background: #fafafa; }
     <div class="stat-grid" id="ov-stats"></div>
   </div>
   <div class="card">
-    <div class="card-title">🏦 各基金收益明细</div>
+    <div class="card-title">🏦 各基金收益明细 <button class="btn btn-ghost btn-sm" onclick="window.print()" style="margin-left:auto">🖨 打印</button></div>
     <div class="tbl-wrap">
       <table>
         <thead>
@@ -229,7 +248,7 @@ tr:hover td { background: #fafafa; }
 <!-- ══ 月度收益 ══ -->
 <div id="page-monthly" class="page">
   <div class="card">
-    <div class="card-title">📅 月度收益统计</div>
+    <div class="card-title">📅 月度收益统计 <button class="btn btn-ghost btn-sm" onclick="window.print()" style="margin-left:auto">🖨 打印</button></div>
     <div class="form-row" style="margin-bottom:16px">
       <div class="form-group">
         <label>年份</label>
