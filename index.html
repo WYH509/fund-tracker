@@ -109,7 +109,7 @@ tr:hover td { background: #fafafa; }
 
 /* NOTICE */
 .notice { background: var(--primary-light); border-radius: var(--radius-sm); padding: 10px 14px; font-size: 13px; color: var(--primary); margin-bottom: 14px; }
-.redeem-badge { display: inline-block; background: rgba(255,149,0,.15); color: var(--warn); font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; margin-left: 6px; }
+.redeem-badge { display: inline-block; background: rgba(255,149,0,.15); color: var(--warn); font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; white-space: nowrap; }
 
 /* HISTORY TAB SWITCH */
 .hist-tabs { display: flex; gap: 0; margin-bottom: 14px; border-bottom: 2px solid var(--border); }
@@ -159,7 +159,8 @@ tr:hover td { background: #fafafa; }
 .nav-sync.synced { color: #34c759; }
 .nav-sync.unsynced { color: var(--text3); }
 
-/* 渠道列不换行 */
+/* 渠道列、状态列不换行 */
+td:nth-child(2), th:nth-child(2),
 td:nth-child(3), th:nth-child(3) { white-space: nowrap; }
 
 /* 打印样式 */
