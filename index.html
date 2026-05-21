@@ -65,6 +65,8 @@ input:focus, select:focus { border-color: var(--primary); background: #fff; }
 .btn-danger { background: var(--danger); color: #fff; }
 .btn-sm { padding: 4px 12px; font-size: 13px; border-radius: 8px; }
 .btn-ghost { background: var(--bg); color: var(--text2); }
+.btn-success { background: var(--success); color: #fff; }
+.btn-warn { background: var(--warn); color: #fff; }
 
 /* TABLE */
 .tbl-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -108,6 +110,24 @@ tr:hover td { background: #fafafa; }
 /* NOTICE */
 .notice { background: var(--primary-light); border-radius: var(--radius-sm); padding: 10px 14px; font-size: 13px; color: var(--primary); margin-bottom: 14px; }
 .redeem-badge { display: inline-block; background: rgba(255,149,0,.15); color: var(--warn); font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; margin-left: 6px; }
+
+/* HISTORY TAB SWITCH */
+.hist-tabs { display: flex; gap: 0; margin-bottom: 14px; border-bottom: 2px solid var(--border); }
+.hist-tab { padding: 8px 18px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; background: transparent; color: var(--text2); border-bottom: 2px solid transparent; margin-bottom: -2px; transition: .2s; }
+.hist-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+.hist-tab-content { display: none; }
+.hist-tab-content.active { display: block; }
+
+/* TRANSACTION CARD SECTIONS */
+.txn-section { background: var(--bg); border-radius: var(--radius-sm); padding: 16px; margin-bottom: 14px; }
+.txn-section-title { font-size: 14px; font-weight: 700; margin-bottom: 12px; }
+.txn-form-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; margin-bottom: 10px; }
+.txn-form-group { display: flex; flex-direction: column; gap: 4px; }
+.txn-form-group label { font-size: 12px; color: var(--text2); font-weight: 500; }
+.txn-type-badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; margin-right: 4px; }
+.txn-type-subscribe { background: rgba(0,122,255,.12); color: #007aff; }
+.txn-type-redeem { background: rgba(255,149,0,.12); color: #ff9500; }
+.txn-type-dividend { background: rgba(52,199,89,.12); color: #34c759; }
 
 @media (max-width: 640px) {
   .nav { padding: 0 12px; }
@@ -168,6 +188,7 @@ td:nth-child(3), th:nth-child(3) { white-space: nowrap; }
   <button class="tab" onclick="gotoPage('chart')">收益曲线</button>
   <button class="tab" onclick="gotoPage('monthly')">月度收益</button>
   <button class="tab" onclick="gotoPage('channel')">渠道对比</button>
+  <button class="tab" onclick="gotoPage('transaction')">交易</button>
   <button class="tab" onclick="gotoPage('history')">历史记录</button>
   <button class="nav-sync unsynced" id="navSyncBtn" onclick="openSyncModal()" title="云同步">☁️</button>
 </nav>
@@ -210,7 +231,7 @@ td:nth-child(3), th:nth-child(3) { white-space: nowrap; }
 <div id="page-input" class="page">
   <div class="card">
     <div class="card-title">📝 录入本周净值</div>
-    <div class="notice">💡 已赎回的基金（衍盛稳进量化多策略一期、中欧中证1000指数增强）不需要录入净值</div>
+    <div class="notice">💡 已赎回的基金不需要录入净值</div>
     <div class="form-row" style="margin-bottom:20px">
       <div class="form-group">
         <label>录入日期</label>
@@ -302,41 +323,184 @@ td:nth-child(3), th:nth-child(3) { white-space: nowrap; }
   </div>
 </div>
 
+<!-- ══ 交易 ══ -->
+<div id="page-transaction" class="page">
+  <!-- 申购基金 -->
+  <div class="card">
+    <div class="card-title">📥 申购基金</div>
+    <div class="txn-section">
+      <div class="txn-form-row">
+        <div class="txn-form-group">
+          <label>基金名称</label>
+          <input type="text" id="sub-name" placeholder="例如：衍盛指数增强1号" style="width:200px">
+        </div>
+        <div class="txn-form-group">
+          <label>基金代码</label>
+          <input type="text" id="sub-code" placeholder="例如：YS001" style="width:120px">
+        </div>
+        <div class="txn-form-group">
+          <label>购买渠道</label>
+          <select id="sub-channel" onchange="onSubChannelChange()" style="width:150px">
+            <option value="">请选择</option>
+            <option value="衍盛基金">衍盛基金</option>
+            <option value="招商证券">招商证券</option>
+            <option value="招商银行">招商银行</option>
+            <option value="__new__">新增渠道...</option>
+          </select>
+          <input type="text" id="sub-channel-new" placeholder="输入新渠道名称" style="width:150px;display:none">
+        </div>
+      </div>
+      <div class="txn-form-row">
+        <div class="txn-form-group">
+          <label>份额</label>
+          <input type="number" id="sub-shares" step="0.01" min="0" placeholder="持有份额" style="width:150px">
+        </div>
+        <div class="txn-form-group">
+          <label>购买日净值</label>
+          <input type="number" id="sub-nav" step="0.0001" min="0" placeholder="4位小数" style="width:130px">
+        </div>
+        <div class="txn-form-group">
+          <label>金额（元）</label>
+          <input type="number" id="sub-amount" step="0.01" min="0" placeholder="购买金额" style="width:150px">
+        </div>
+        <div class="txn-form-group">
+          <label>购买日期</label>
+          <input type="date" id="sub-date" style="width:150px">
+        </div>
+      </div>
+      <div style="margin-top:8px">
+        <button class="btn btn-primary" onclick="doSubscribe()">确认申购</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 赎回基金 -->
+  <div class="card">
+    <div class="card-title">📤 赎回基金</div>
+    <div class="txn-section">
+      <div class="txn-form-row">
+        <div class="txn-form-group">
+          <label>选择基金</label>
+          <select id="redeem-fund" style="width:260px"></select>
+        </div>
+        <div class="txn-form-group">
+          <label>赎回日期</label>
+          <input type="date" id="redeem-date" style="width:150px">
+        </div>
+        <div class="txn-form-group">
+          <label>到账金额（元）</label>
+          <input type="number" id="redeem-amount" step="0.01" min="0" placeholder="赎回到账金额" style="width:170px">
+        </div>
+      </div>
+      <div style="margin-top:8px">
+        <button class="btn btn-danger" onclick="doRedeem()">确认赎回</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 基金分红 -->
+  <div class="card">
+    <div class="card-title">💰 基金分红</div>
+    <div class="txn-section">
+      <div class="txn-form-row">
+        <div class="txn-form-group">
+          <label>选择基金</label>
+          <select id="div-fund" onchange="onDivFundChange()" style="width:260px"></select>
+        </div>
+        <div class="txn-form-group">
+          <label>分红方式</label>
+          <select id="div-type" onchange="onDivTypeChange()" style="width:130px">
+            <option value="reinvest">再投资</option>
+            <option value="cash">现金分红</option>
+          </select>
+        </div>
+        <div class="txn-form-group">
+          <label>分红金额（元）</label>
+          <input type="number" id="div-amount" step="0.01" min="0" placeholder="分红金额" style="width:150px">
+        </div>
+        <div class="txn-form-group">
+          <label>分红日期</label>
+          <input type="date" id="div-date" style="width:150px">
+        </div>
+      </div>
+      <div class="txn-form-row" id="div-reinvest-row">
+        <div class="txn-form-group">
+          <label>分红份额</label>
+          <input type="number" id="div-shares" step="0.01" min="0" placeholder="再投资增加的份额" style="width:160px">
+        </div>
+        <div class="txn-form-group">
+          <label>分红日净值</label>
+          <input type="number" id="div-nav" step="0.0001" min="0" placeholder="4位小数" style="width:130px">
+        </div>
+      </div>
+      <div style="margin-top:8px">
+        <button class="btn btn-warn" onclick="doDividend()">确认分红</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ══ 历史记录 ══ -->
 <div id="page-history" class="page">
   <div class="card">
-    <div class="card-title">🗂 历史净值记录</div>
-    <div class="form-row" style="margin-bottom:14px">
-      <div class="form-group">
-        <label>基金筛选</label>
-        <select id="hist-filter" onchange="renderHistory()"></select>
+    <div class="card-title">🗂 历史记录</div>
+    <div class="hist-tabs">
+      <button class="hist-tab active" onclick="switchHistTab('nav')">净值记录</button>
+      <button class="hist-tab" onclick="switchHistTab('txn')">交易记录</button>
+    </div>
+    <!-- 净值记录 -->
+    <div class="hist-tab-content active" id="hist-nav-content">
+      <div class="form-row" style="margin-bottom:14px">
+        <div class="form-group">
+          <label>基金筛选</label>
+          <select id="hist-filter" onchange="renderHistory()"></select>
+        </div>
+        <div class="form-group">
+          <label>起始日期</label>
+          <input type="date" id="hist-date-from" onchange="renderHistory()">
+        </div>
+        <div class="form-group">
+          <label>截止日期</label>
+          <input type="date" id="hist-date-to" onchange="renderHistory()">
+        </div>
       </div>
-      <div class="form-group">
-        <label>起始日期</label>
-        <input type="date" id="hist-date-from" onchange="renderHistory()">
-      </div>
-      <div class="form-group">
-        <label>截止日期</label>
-        <input type="date" id="hist-date-to" onchange="renderHistory()">
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>日期</th>
+              <th>基金名称</th>
+              <th>净值</th>
+              <th>持有份额</th>
+              <th>持仓市值</th>
+              <th>总收益</th>
+              <th>总收益率</th>
+              <th>较上次净值</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="hist-tbody"></tbody>
+        </table>
       </div>
     </div>
-    <div class="tbl-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>日期</th>
-            <th>基金名称</th>
-            <th>净值</th>
-            <th>持有份额</th>
-            <th>持仓市值</th>
-            <th>总收益</th>
-            <th>总收益率</th>
-            <th>较上次净值</th>
-            <th>操作</th>
-          </tr>
-        </thead>
-        <tbody id="hist-tbody"></tbody>
-      </table>
+    <!-- 交易记录 -->
+    <div class="hist-tab-content" id="hist-txn-content">
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>日期</th>
+              <th>基金名称</th>
+              <th>操作类型</th>
+              <th>金额（元）</th>
+              <th>份额</th>
+              <th>净值</th>
+              <th>备注</th>
+            </tr>
+          </thead>
+          <tbody id="txn-tbody"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 </div>
@@ -358,18 +522,16 @@ td:nth-child(3), th:nth-child(3) { white-space: nowrap; }
 
 <script>
 // ═══════════════════════════════════════════════════════
-// 基金定义
+// 种子基金数据（仅用于初始化）
 // ═══════════════════════════════════════════════════════
-// status: 'active'=持仓中  'redeemed'=已赎回（固定到账收益，不录净值）
-const FUNDS = [
-  // ── 衍盛基金（购买渠道）──
+const SEED_FUNDS = [
   {
     id: 'ys1', name: '衍盛稳进量化多策略一期', code: 'YS_WJ',
     group: '衍盛资产', channel: '衍盛基金', status: 'redeemed',
     buyDate: '2021-01-15', cost: 0,
     shares: 0, yearStartNav: null,
-    redeemedProfit: 936058,      // 今年到账收益
-    redeemedTotalProfit: 936058  // 总收益（到账金额即为总收益）
+    redeemedProfit: 936058,
+    redeemedTotalProfit: 936058
   },
   {
     id: 'ys2', name: '衍盛指数增强1号', code: 'YS001',
@@ -377,7 +539,6 @@ const FUNDS = [
     buyDate: '2021-01-15', cost: 27000000,
     shares: 18781451.95, yearStartNav: 2.181
   },
-  // ── 招商证券 ──
   {
     id: 'hf', name: '幻方量化300指数专享16号11期', code: 'HF300',
     group: '招商证券', channel: '招商证券', status: 'active',
@@ -420,19 +581,15 @@ const FUNDS = [
     id: 'lq', name: '龙旗科技创新精选15号6期', code: 'LQCX',
     group: '招商证券', channel: '招商证券', status: 'active',
     buyDate: '2026-05-15', cost: 5000000,
-    shares: 5002000.80, yearStartNav: 0.9995 // 买入时净值
+    shares: 5002000.80, yearStartNav: 0.9995
   },
-  // ── 招商银行 ──
   {
     id: 'zsfy', name: '招商财富-丰元联动108号', code: 'ZSFY',
     group: '招商银行', channel: '招商银行', status: 'active',
     buyDate: '2026-03-09', cost: 5025000,
-    shares: 5000523.43, yearStartNav: 1.0 // 买入时净值=1
+    shares: 5000523.43, yearStartNav: 1.0
   },
 ];
-
-const ACTIVE_FUNDS = FUNDS.filter(f => f.status === 'active');
-const REDEEMED_FUNDS = FUNDS.filter(f => f.status === 'redeemed');
 
 // ── 颜色 ──
 const PALETTE = [
@@ -442,19 +599,68 @@ const PALETTE = [
 ];
 
 // ═══════════════════════════════════════════════════════
-// localStorage 存储
+// localStorage 存储 — 基金列表
+// ═══════════════════════════════════════════════════════
+const FUND_KEY = 'fund_list_v1';
+
+function getFunds() {
+  try {
+    const data = JSON.parse(localStorage.getItem(FUND_KEY));
+    return Array.isArray(data) ? data : [];
+  } catch { return []; }
+}
+
+function setFunds(arr) {
+  localStorage.setItem(FUND_KEY, JSON.stringify(arr));
+}
+
+function getActiveFunds() {
+  return getFunds().filter(f => f.status === 'active');
+}
+
+function getRedeemedFunds() {
+  return getFunds().filter(f => f.status === 'redeemed');
+}
+
+function getFund(id) {
+  return getFunds().find(f => f.id === id) || null;
+}
+
+// ═══════════════════════════════════════════════════════
+// localStorage 存储 — 交易记录
+// ═══════════════════════════════════════════════════════
+const TXN_KEY = 'fund_transactions_v1';
+
+function getTransactions() {
+  try {
+    const data = JSON.parse(localStorage.getItem(TXN_KEY));
+    return Array.isArray(data) ? data : [];
+  } catch { return []; }
+}
+
+function setTransactions(arr) {
+  localStorage.setItem(TXN_KEY, JSON.stringify(arr));
+}
+
+function addTransaction(txn) {
+  const txns = getTransactions();
+  txns.push(txn);
+  setTransactions(txns);
+}
+
+// ═══════════════════════════════════════════════════════
+// localStorage 存储 — 净值记录
 // ═══════════════════════════════════════════════════════
 const REC_KEY = 'ys_records_v3';
 function getRecs() { try { return JSON.parse(localStorage.getItem(REC_KEY)) || []; } catch { return []; } }
-function setRecs(arr) { localStorage.setItem(REC_KEY, JSON.stringify(arr)); }
+function setRecsRaw(arr) { localStorage.setItem(REC_KEY, JSON.stringify(arr)); }
 
 // 初始化种子数据（从Excel提取的历史净值）
 const SEED_HISTORY = [
-  // 格式: [date, ys2,   hf,     lr1,    lr2,    kd,     mh,     zsfy,   lq]
   ['2025-12-05', 2.323, null,   null,   null,   null,   null,   null,   null],
   ['2025-12-12', 2.316, null,   null,   null,   null,   null,   null,   null],
   ['2025-12-19', 2.332, null,   null,   null,   null,   null,   null,   null],
-  ['2025-12-26', 2.412, null,   null,   1.5222, 1.0589, 1.0598, null,   null],
+  ['2025-12-26', 2.412, null,   null,   null,   null,   1.0589, 1.0598, null,   null],
   ['2025-12-31', 2.181, 1.9034, 2.1087, 1.517,  1.0561, 1.0603, null,   null],
   ['2026-01-05', 2.181, 1.9034, 2.1494, 1.5444, 1.0561, 1.0603, null,   null],
   ['2026-01-09', 2.298, 1.9962, 2.2605, 1.6068, 1.1185, 1.1216, null,   null],
@@ -484,7 +690,7 @@ const SEED_HISTORY = [
   ['2026-04-24', 2.434, 2.2316, 2.3704, 1.7105, 1.1393, 1.1886, 1.0,    null],
   ['2026-04-27', 2.434, 2.2478, 2.3704, 1.7105, 1.1478, 1.2016, 1.0,    null],
   ['2026-04-30', 2.466, 2.2587, 2.4251, 1.7467, 1.1542, 1.2112, 1.0,    null],
-  ['2026-05-06', 2.466, 2.2587, 2.4644, 1.7818, 1.1542, 1.2112, 1.0,    null],
+  ['2026-05-06', 2.466, 2.2587, 2.4644, 1.7818, 1.1542, 1.2112, 1.0],
   ['2026-05-08', 2.549, 2.3751, 2.5324, 1.8371, 1.2144, 1.2642, 1.0],
   ['2026-05-11', 2.549, 2.3751, 2.5324, 1.8371, 1.2144, 1.281,  1.0],
   ['2026-05-15', 2.493, 2.3605, 2.5303, 1.8163, 1.1815, 1.2602, 1.0521, 0.9995],
@@ -500,21 +706,36 @@ function initSeed() {
     SEED_IDS.forEach((id, i) => { if (vals[i] != null) funds[id] = vals[i]; });
     return { date, funds };
   });
-  setRecs(recs);
+  setRecsRaw(recs);
 }
 
-// 迁移：为已有数据添加龙旗科技创新精选15号6期（lq）的首条净值
-function migrateAddLQ() {
-  const MIG_KEY = 'migrated_lq';
-  if (localStorage.getItem(MIG_KEY)) return;
-  const recs = getRecs();
-  // 在 2026-05-15 的记录中添加 lq: 0.9995
-  const r = recs.find(r => r.date === '2026-05-15');
-  if (r && r.funds.lq == null) {
-    r.funds.lq = 0.9995;
-    setRecs(recs);
+// ═══════════════════════════════════════════════════════
+// 数据迁移 V1→V2
+// ═══════════════════════════════════════════════════════
+const MIG_V2_KEY = 'migrated_v2';
+
+function migrateV1ToV2() {
+  if (localStorage.getItem(MIG_V2_KEY)) return;
+  // 检测 fund_list_v1 是否存在，不存在则将 SEED_FUNDS 写入
+  if (!localStorage.getItem(FUND_KEY)) {
+    setFunds(SEED_FUNDS);
   }
-  localStorage.setItem(MIG_KEY, '1');
+  // 初始化交易记录（空数组）
+  if (!localStorage.getItem(TXN_KEY)) {
+    setTransactions([]);
+  }
+  // 迁移：为已有数据添加龙旗科技创新精选15号6期（lq）的首条净值
+  const MIG_LQ_KEY = 'migrated_lq';
+  if (!localStorage.getItem(MIG_LQ_KEY)) {
+    const recs = getRecs();
+    const r = recs.find(r => r.date === '2026-05-15');
+    if (r && r.funds.lq == null) {
+      r.funds.lq = 0.9995;
+      setRecsRaw(recs);
+    }
+    localStorage.setItem(MIG_LQ_KEY, '1');
+  }
+  localStorage.setItem(MIG_V2_KEY, '1');
 }
 
 // ═══════════════════════════════════════════════════════
@@ -523,8 +744,6 @@ function migrateAddLQ() {
 const fmt  = (n, d=0) => n == null || isNaN(n) ? '—' : n.toLocaleString('zh-CN', {minimumFractionDigits:d,maximumFractionDigits:d});
 const fmtP = (n, d=2) => n == null || isNaN(n) ? '—' : (n>=0?'+':'') + (n*100).toFixed(d) + '%';
 const cc   = (n)      => n > 0 ? 'up' : n < 0 ? 'down' : 'neutral';
-
-function getFund(id) { return FUNDS.find(f => f.id === id); }
 
 // 找某日期之前最近一条记录（不含当天），且该基金有净值
 function prevRec(recs, date, fundId) {
@@ -559,19 +778,199 @@ function weekPrevRec(recs, date, fundId) {
 }
 
 // ═══════════════════════════════════════════════════════
+// 交易操作 — 申购/赎回/分红
+// ═══════════════════════════════════════════════════════
+
+/** 生成基金ID：基于名称的简单hash + 时间戳后4位 */
+function generateFundId(name) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = ((hash << 5) - hash) + name.charCodeAt(i);
+    hash |= 0;
+  }
+  const ts = Date.now().toString(36).slice(-4);
+  return 'f_' + Math.abs(hash).toString(36).slice(0, 4) + '_' + ts;
+}
+
+/** 根据渠道推断分组 */
+function inferGroup(channel) {
+  const map = { '衍盛基金': '衍盛资产', '招商证券': '招商证券', '招商银行': '招商银行' };
+  return map[channel] || channel;
+}
+
+/** 申购基金 */
+function subscribeFund(name, code, channel, shares, nav, amount, date) {
+  const id = generateFundId(name);
+  const group = inferGroup(channel);
+  const yearStartNav = nav; // 购买日净值即年初净值（年内新购）
+  const fund = {
+    id, name, code,
+    group, channel, status: 'active',
+    buyDate: date, cost: amount,
+    shares, yearStartNav
+  };
+
+  // 写入 fund_list_v1
+  const funds = getFunds();
+  funds.push(fund);
+  setFunds(funds);
+
+  // 在购买日自动插入净值记录到 ys_records_v3
+  const recs = getRecs();
+  const existingRec = recs.find(r => r.date === date);
+  if (existingRec) {
+    existingRec.funds[id] = nav;
+  } else {
+    recs.push({ date, funds: { [id]: nav } });
+  }
+  setRecsRaw(recs);
+
+  // 生成交易记录
+  addTransaction({
+    id: 'txn_' + Date.now(),
+    fundId: id,
+    fundName: name,
+    type: 'subscribe',
+    date,
+    amount,
+    shares,
+    nav,
+    note: `申购 ${name}，份额 ${fmt(shares,2)}，净值 ${nav.toFixed(4)}`
+  });
+
+  autoSyncToGist();
+}
+
+/** 赎回基金 */
+function redeemFund(fundId, date, receivedAmount) {
+  const funds = getFunds();
+  const fund = funds.find(f => f.id === fundId);
+  if (!fund) return;
+
+  // 计算收益
+  const recs = getRecs();
+  const sorted = [...recs].sort((a,b) => b.date.localeCompare(a.date));
+  // 获取最新净值
+  let latestNav = null;
+  for (const rec of sorted) {
+    if (rec.funds[fundId] != null) {
+      latestNav = rec.funds[fundId];
+      break;
+    }
+  }
+
+  const totalProfit = receivedAmount - fund.cost;
+
+  // 计算本年收益
+  let yearProfit = totalProfit;
+  if (fund.yearStartNav != null && fund.shares > 0) {
+    yearProfit = receivedAmount - fund.shares * fund.yearStartNav;
+  }
+
+  // 标记为已赎回
+  fund.status = 'redeemed';
+  fund.redeemedProfit = yearProfit;
+  fund.redeemedTotalProfit = totalProfit;
+  fund.redeemedDate = date;
+  fund.redeemedAmount = receivedAmount;
+  fund.cost = 0;
+  fund.shares = 0;
+  fund.yearStartNav = null;
+  setFunds(funds);
+
+  // 生成交易记录
+  addTransaction({
+    id: 'txn_' + Date.now(),
+    fundId,
+    fundName: fund.name,
+    type: 'redeem',
+    date,
+    amount: receivedAmount,
+    shares: 0,
+    nav: latestNav,
+    note: `赎回 ${fund.name}，到账 ${fmt(receivedAmount)}，总收益 ${fmt(totalProfit)}`
+  });
+
+  autoSyncToGist();
+}
+
+/** 基金分红 */
+function dividendFund(fundId, divType, amount, date, divShares, divNav) {
+  const funds = getFunds();
+  const fund = funds.find(f => f.id === fundId);
+  if (!fund) return;
+
+  if (divType === 'reinvest') {
+    // 再投资：增加份额和成本
+    fund.shares += divShares;
+    fund.cost += amount;
+    setFunds(funds);
+
+    addTransaction({
+      id: 'txn_' + Date.now(),
+      fundId,
+      fundName: fund.name,
+      type: 'dividend_reinvest',
+      date,
+      amount,
+      shares: divShares,
+      nav: divNav,
+      note: `分红再投资 ${fund.name}，金额 ${fmt(amount)}，份额 +${fmt(divShares,2)}，净值 ${divNav ? divNav.toFixed(4) : '—'}`
+    });
+  } else {
+    // 现金分红：仅记录交易，不影响份额和成本
+    addTransaction({
+      id: 'txn_' + Date.now(),
+      fundId,
+      fundName: fund.name,
+      type: 'dividend_cash',
+      date,
+      amount,
+      shares: 0,
+      nav: null,
+      note: `现金分红 ${fund.name}，金额 ${fmt(amount)}`
+    });
+  }
+
+  autoSyncToGist();
+}
+
+// ═══════════════════════════════════════════════════════
+// 现金分红查询辅助函数
+// ═══════════════════════════════════════════════════════
+
+/** 获取某基金在某月(YYYY-MM)的现金分红总额 */
+function getCashDividends(fundId, yearMonth) {
+  const txns = getTransactions();
+  return txns
+    .filter(t => t.fundId === fundId && t.type === 'dividend_cash' && t.date.startsWith(yearMonth))
+    .reduce((sum, t) => sum + (t.amount || 0), 0);
+}
+
+/** 获取某基金在某年的现金分红总额 */
+function getYearCashDividends(fundId, year) {
+  const txns = getTransactions();
+  return txns
+    .filter(t => t.fundId === fundId && t.type === 'dividend_cash' && t.date.startsWith(year))
+    .reduce((sum, t) => sum + (t.amount || 0), 0);
+}
+
+// ═══════════════════════════════════════════════════════
 // 页面切换
 // ═══════════════════════════════════════════════════════
 function gotoPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
-  document.querySelector(`[onclick="gotoPage('${id}')"]`).classList.add('active');
-  if (id === 'overview') renderOverview();
-  if (id === 'input')    initInput();
-  if (id === 'chart')    renderCharts();
-  if (id === 'monthly')  { buildYearSelect(); renderMonthly(); }
-  if (id === 'channel')  renderChannel();
-  if (id === 'history')  { buildHistFilter(); renderHistory(); }
+  const tabBtn = document.querySelector(`[onclick="gotoPage('${id}')"]`);
+  if (tabBtn) tabBtn.classList.add('active');
+  if (id === 'overview')   renderOverview();
+  if (id === 'input')      initInput();
+  if (id === 'chart')      renderCharts();
+  if (id === 'monthly')    { buildYearSelect(); renderMonthly(); }
+  if (id === 'channel')    renderChannel();
+  if (id === 'transaction') renderTransactionTab();
+  if (id === 'history')    { buildHistFilter(); renderHistory(); renderTransactionHistory(); }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -579,6 +978,8 @@ function gotoPage(id) {
 // ═══════════════════════════════════════════════════════
 function renderOverview() {
   const recs = getRecs();
+  const activeFunds = getActiveFunds();
+  const redeemedFunds = getRedeemedFunds();
   const sorted = [...recs].sort((a,b) => b.date.localeCompare(a.date));
   const latest = sorted[0];
   if (!latest) { document.getElementById('ov-stats').innerHTML = '<div style="color:var(--text3);font-size:14px">暂无数据，请前往「录入净值」页面</div>'; document.getElementById('ov-tbody').innerHTML=''; return; }
@@ -587,13 +988,13 @@ function renderOverview() {
   let totalCost=0, totalVal=0, totalYearP=0, totalWeekP=0, totalMonthP=0, totalP=0;
 
   // 已赎回基金的收益
-  const redeemedYearProfit = REDEEMED_FUNDS.reduce((s,f) => s + (f.redeemedProfit||0), 0);
-  const redeemedTotalProfit = REDEEMED_FUNDS.reduce((s,f) => s + (f.redeemedTotalProfit||0), 0);
+  const redeemedYearProfit = redeemedFunds.reduce((s,f) => s + (f.redeemedProfit||0), 0);
+  const redeemedTotalProfit = redeemedFunds.reduce((s,f) => s + (f.redeemedTotalProfit||0), 0);
 
   const rows = [];
 
   // ── 活跃基金 ──
-  for (const f of ACTIVE_FUNDS) {
+  for (const f of activeFunds) {
     const nav = latest.funds[f.id];
     if (nav == null) continue;
     const val     = f.shares * nav;
@@ -604,9 +1005,17 @@ function renderOverview() {
     const mRec = monthStartRec(recs, latDate, f.id);
     const yRec = yearStartRec(recs, latDate, f.id);
 
-    const weekP  = wRec ? (nav - wRec.funds[f.id])  * f.shares : 0;
-    const monthP = mRec ? (nav - mRec.funds[f.id]) * f.shares : 0;
-    const yearP  = yRec ? (nav - yRec.funds[f.id])  * f.shares : (nav - f.yearStartNav) * f.shares;
+    let weekP  = wRec ? (nav - wRec.funds[f.id])  * f.shares : 0;
+    let monthP = mRec ? (nav - mRec.funds[f.id]) * f.shares : 0;
+    let yearP  = yRec ? (nav - yRec.funds[f.id])  * f.shares : (nav - f.yearStartNav) * f.shares;
+
+    // T04: 加入现金分红
+    const latMonth = latDate.slice(0, 7); // YYYY-MM
+    const latYear = latDate.slice(0, 4);  // YYYY
+    const monthDiv = getCashDividends(f.id, latMonth);
+    const yearDiv = getYearCashDividends(f.id, latYear);
+    monthP += monthDiv;
+    yearP += yearDiv;
 
     totalCost   += f.cost;
     totalVal    += val;
@@ -619,7 +1028,7 @@ function renderOverview() {
   }
 
   // 已赎回基金行
-  for (const f of REDEEMED_FUNDS) {
+  for (const f of redeemedFunds) {
     rows.push({ f, nav: null, val: 0, profit: f.redeemedTotalProfit, pRate: null, weekP: 0, monthP: 0, yearP: f.redeemedProfit, redeemed: true });
   }
 
@@ -716,7 +1125,8 @@ function initInput() {
   const dateEl = document.getElementById('input-date');
   if (!dateEl.value) dateEl.value = new Date().toISOString().slice(0,10);
   const grid = document.getElementById('fund-inputs');
-  grid.innerHTML = ACTIVE_FUNDS.map(f => `
+  const activeFunds = getActiveFunds();
+  grid.innerHTML = activeFunds.map(f => `
     <div class="fund-input-item">
       <div class="fund-input-name">${f.name}</div>
       <div class="fund-input-meta">${f.group} · 份额 ${fmt(f.shares,2)} · 成本 ${fmt(f.cost)}</div>
@@ -728,7 +1138,8 @@ function fillLastNav() {
   const recs = getRecs();
   if (!recs.length) return;
   const latest = [...recs].sort((a,b) => b.date.localeCompare(a.date))[0];
-  ACTIVE_FUNDS.forEach(f => {
+  const activeFunds = getActiveFunds();
+  activeFunds.forEach(f => {
     const el = document.getElementById('nav-'+f.id);
     if (el && latest.funds[f.id] != null) el.value = latest.funds[f.id];
   });
@@ -739,7 +1150,8 @@ function saveRecord() {
   if (!date) { alert('请选择录入日期'); return; }
   const funds = {};
   let cnt = 0;
-  ACTIVE_FUNDS.forEach(f => {
+  const activeFunds = getActiveFunds();
+  activeFunds.forEach(f => {
     const el = document.getElementById('nav-'+f.id);
     const v = el?.value;
     if (v !== '' && v != null && !isNaN(parseFloat(v))) {
@@ -752,11 +1164,11 @@ function saveRecord() {
   const idx = recs.findIndex(r => r.date === date);
   if (idx >= 0) {
     if (!confirm(`${date} 已有记录，是否覆盖？`)) return;
-    recs[idx] = { date, funds };
+    recs[idx] = { date, funds: { ...recs[idx].funds, ...funds } };
   } else {
     recs.push({ date, funds });
   }
-  setRecs(recs);
+  setRecsRaw(recs);
   alert('✅ 保存成功！共录入 ' + cnt + ' 只基金净值。');
 }
 
@@ -764,13 +1176,28 @@ function saveRecord() {
 // 图表页
 // ═══════════════════════════════════════════════════════
 const chartInst = {};
-const selState = { rate: new Set(ACTIVE_FUNDS.map(f=>f.id)), nav: new Set(ACTIVE_FUNDS.map(f=>f.id)), val: new Set(ACTIVE_FUNDS.map(f=>f.id)) };
+const selState = { rate: new Set(), nav: new Set(), val: new Set() };
+
+function _initSelState() {
+  const activeFunds = getActiveFunds();
+  if (selState.rate.size === 0) activeFunds.forEach(f => selState.rate.add(f.id));
+  if (selState.nav.size === 0) activeFunds.forEach(f => selState.nav.add(f.id));
+  if (selState.val.size === 0) activeFunds.forEach(f => selState.val.add(f.id));
+  // 清除不存在的id
+  const activeIds = new Set(activeFunds.map(f => f.id));
+  for (const key of ['rate','nav','val']) {
+    for (const id of selState[key]) {
+      if (!activeIds.has(id)) selState[key].delete(id);
+    }
+  }
+}
 
 function buildSelector(containerId, key) {
+  const activeFunds = getActiveFunds();
   const el = document.getElementById(containerId);
-  const allOn = selState[key].size === ACTIVE_FUNDS.length;
+  const allOn = selState[key].size >= activeFunds.length && activeFunds.length > 0;
   el.innerHTML = `<span class="fund-chip ${allOn?'all-sel':''}" onclick="toggleAll('${key}')">全部</span>` +
-    ACTIVE_FUNDS.map((f,i) => {
+    activeFunds.map((f,i) => {
       const on = selState[key].has(f.id);
       const c = PALETTE[i % PALETTE.length];
       return `<span class="fund-chip ${on?'sel':''}" style="${on?`border-color:${c};background:${c}22;color:${c}`:''}" onclick="toggleFund('${key}','${f.id}')">${f.name.length>10?f.name.slice(0,10)+'…':f.name}</span>`;
@@ -778,8 +1205,9 @@ function buildSelector(containerId, key) {
 }
 
 function toggleAll(key) {
-  if (selState[key].size === ACTIVE_FUNDS.length) selState[key].clear();
-  else ACTIVE_FUNDS.forEach(f => selState[key].add(f.id));
+  const activeFunds = getActiveFunds();
+  if (selState[key].size >= activeFunds.length) selState[key].clear();
+  else activeFunds.forEach(f => selState[key].add(f.id));
   renderCharts();
 }
 function toggleFund(key, id) {
@@ -789,8 +1217,10 @@ function toggleFund(key, id) {
 }
 
 function renderCharts() {
+  const activeFunds = getActiveFunds();
   const recs = getRecs();
   if (!recs.length) return;
+  _initSelState();
   const sorted = [...recs].sort((a,b) => a.date.localeCompare(b.date));
   const labels = [...new Set(sorted.map(r => r.date))];
 
@@ -799,8 +1229,8 @@ function renderCharts() {
   buildSelector('sel-val','val');
 
   // ── 收益率曲线（相对年初净值）──
-  const rateDS = ACTIVE_FUNDS.filter(f => selState['rate'].has(f.id)).map((f,i) => {
-    const color = PALETTE[ACTIVE_FUNDS.indexOf(f) % PALETTE.length];
+  const rateDS = activeFunds.filter(f => selState['rate'].has(f.id)).map((f) => {
+    const color = PALETTE[activeFunds.indexOf(f) % PALETTE.length];
     return {
       label: f.name,
       data: labels.map(d => {
@@ -818,8 +1248,8 @@ function renderCharts() {
   drawLine('c-rate', labels, rateDS, '收益率(%)');
 
   // ── 净值曲线 ──
-  const navDS = ACTIVE_FUNDS.filter(f => selState['nav'].has(f.id)).map((f,i) => {
-    const color = PALETTE[ACTIVE_FUNDS.indexOf(f) % PALETTE.length];
+  const navDS = activeFunds.filter(f => selState['nav'].has(f.id)).map((f) => {
+    const color = PALETTE[activeFunds.indexOf(f) % PALETTE.length];
     return {
       label: f.name,
       data: labels.map(d => { const r = sorted.find(x=>x.date===d); return r?.funds[f.id] ?? null; }),
@@ -830,8 +1260,8 @@ function renderCharts() {
   drawLine('c-nav', labels, navDS, '净值');
 
   // ── 市值曲线 ──
-  const valDS = ACTIVE_FUNDS.filter(f => selState['val'].has(f.id)).map((f,i) => {
-    const color = PALETTE[ACTIVE_FUNDS.indexOf(f) % PALETTE.length];
+  const valDS = activeFunds.filter(f => selState['val'].has(f.id)).map((f) => {
+    const color = PALETTE[activeFunds.indexOf(f) % PALETTE.length];
     return {
       label: f.name,
       data: labels.map(d => { const r=sorted.find(x=>x.date===d); const nav=r?.funds[f.id]; return nav!=null?+(f.shares*nav).toFixed(0):null; }),
@@ -909,10 +1339,9 @@ function renderMonthly() {
   const year = document.getElementById('monthly-year').value;
   if (!year) return;
   const recs = getRecs();
+  const activeFunds = getActiveFunds();
+  const redeemedFunds = getRedeemedFunds();
   const sorted = [...recs].sort((a,b) => a.date.localeCompare(b.date));
-
-  // 已赎回基金仅在2026年计入今年收益（统一在1月展示）
-  const isCurrentYear = year === '2026';
 
   const months = Array.from({length:12},(_,i)=>String(i+1).padStart(2,'0'));
   const mData = months.map(m => {
@@ -926,20 +1355,18 @@ function renderMonthly() {
     let total = 0;
     let initVal = 0;
 
-    for (const f of ACTIVE_FUNDS) {
+    for (const f of activeFunds) {
       const nav = lastRec.funds[f.id];
       const pn  = prevRec_?.funds[f.id];
       if (nav != null && pn != null) {
         profits[f.id] = (nav - pn) * f.shares;
+        // T04: 加上当月现金分红
+        const monthDiv = getCashDividends(f.id, mStr);
+        profits[f.id] += monthDiv;
         total += profits[f.id];
       }
       if (prevRec_ && pn != null) initVal += f.shares * pn;
     }
-
-    // 已赎回基金只在特定月份加进去（2026年到账）
-    // 衍盛稳进：2025年赎回，到账在2026年；中欧：2025年底~2026年初赎回
-    // 按用户说明"计入今年收益"，统一加在5月（2026-05）——如果是当年
-    // 实际上只需要在汇总行体现，不单独分月，这里跳过
 
     const rate = initVal > 0 ? total / initVal : null;
     return { m, profits, total, rate };
@@ -968,7 +1395,7 @@ function renderMonthly() {
   });
 
   // Table header
-  const allShowFunds = ACTIVE_FUNDS;
+  const allShowFunds = activeFunds;
   document.getElementById('monthly-thead').innerHTML = `<tr>
     <th>月份</th>
     ${allShowFunds.map(f=>`<th>${f.name.length>8?f.name.slice(0,8)+'…':f.name}</th>`).join('')}
@@ -993,16 +1420,19 @@ function renderMonthly() {
     </tr>`;
   });
 
-  // 已赎回收益注记行（仅2026）
+  // 已赎回收益注记行
+  const isCurrentYear = year === String(new Date().getFullYear());
   let extraRow = '';
-  if (isCurrentYear) {
+  if (isCurrentYear && redeemedFunds.length > 0) {
+    const redeemedTotal = redeemedFunds.reduce((s,f) => s + (f.redeemedProfit||0), 0);
+    const names = redeemedFunds.map(f => `${f.name} +${fmt(f.redeemedProfit||0)}`).join('，');
     extraRow = `<tr style="background:rgba(255,149,0,.07)">
       <td colspan="${allShowFunds.length+1}" style="color:var(--warn);font-size:13px">
-        ⚠️ 已赎回基金今年收益（未分月）：衍盛稳进量化多策略一期 +${fmt(936058)} 元，中欧中证1000指数增强 +${fmt(298887.64)} 元，合计 +${fmt(936058+298887.64)} 元
+        ⚠️ 已赎回基金今年收益（未分月）：${names}，合计 +${fmt(redeemedTotal)} 元
       </td>
-      <td colspan="1" class="up" style="font-weight:700">+${fmt(936058+298887.64)}</td>
+      <td colspan="1" class="up" style="font-weight:700">+${fmt(redeemedTotal)}</td>
     </tr>`;
-    yearTotal += 936058 + 298887.64;
+    yearTotal += redeemedTotal;
   }
 
   document.getElementById('monthly-tbody').innerHTML = rows.join('') + extraRow + `
@@ -1019,6 +1449,7 @@ function renderMonthly() {
 // ═══════════════════════════════════════════════════════
 function renderChannel() {
   const recs = getRecs();
+  const allFunds = getFunds();
   const sorted = [...recs].sort((a,b) => b.date.localeCompare(a.date));
   const latest = sorted[0];
   if (!latest) { document.getElementById('ch-tbody').innerHTML = '<tr><td colspan="12" style="text-align:center;padding:32px;color:var(--text3)">暂无数据</td></tr>'; return; }
@@ -1026,7 +1457,7 @@ function renderChannel() {
 
   // 按渠道分组
   const channelMap = {};
-  for (const f of FUNDS) {
+  for (const f of allFunds) {
     const ch = f.channel || '其他';
     if (!channelMap[ch]) channelMap[ch] = [];
     channelMap[ch].push(f);
@@ -1037,10 +1468,8 @@ function renderChannel() {
 
   for (const [chName, funds] of Object.entries(channelMap)) {
     let cost=0, val=0, weekP=0, monthP=0, yearP=0, profit=0;
-    const fundNames = [];
 
     for (const f of funds) {
-      fundNames.push(f.name.length > 6 ? f.name.slice(0,6) + '…' : f.name);
       if (f.status === 'redeemed') {
         yearP  += f.redeemedProfit || 0;
         profit += f.redeemedTotalProfit || 0;
@@ -1060,6 +1489,12 @@ function renderChannel() {
       weekP  += wRec ? (nav - wRec.funds[f.id])  * f.shares : 0;
       monthP += mRec ? (nav - mRec.funds[f.id]) * f.shares : 0;
       yearP  += yRec ? (nav - yRec.funds[f.id])  * f.shares : (nav - f.yearStartNav) * f.shares;
+
+      // T04: 加上现金分红
+      const latMonth = latDate.slice(0, 7);
+      const latYear = latDate.slice(0, 4);
+      monthP += getCashDividends(f.id, latMonth);
+      yearP  += getYearCashDividends(f.id, latYear);
     }
 
     const weekRate  = (val - weekP)  > 0 ? weekP  / (val - weekP)  : 0;
@@ -1160,17 +1595,182 @@ function renderChannel() {
 }
 
 // ═══════════════════════════════════════════════════════
+// 交易Tab页
+// ═══════════════════════════════════════════════════════
+function renderTransactionTab() {
+  const activeFunds = getActiveFunds();
+
+  // 填充赎回基金下拉
+  const redeemSel = document.getElementById('redeem-fund');
+  redeemSel.innerHTML = '<option value="">请选择基金</option>' +
+    activeFunds.map(f => `<option value="${f.id}">${f.name} (${f.channel})</option>`).join('');
+
+  // 填充分红基金下拉
+  const divSel = document.getElementById('div-fund');
+  divSel.innerHTML = '<option value="">请选择基金</option>' +
+    activeFunds.map(f => `<option value="${f.id}">${f.name} (${f.channel})</option>`).join('');
+
+  // 设置默认日期
+  const today = new Date().toISOString().slice(0, 10);
+  if (!document.getElementById('sub-date').value) document.getElementById('sub-date').value = today;
+  if (!document.getElementById('redeem-date').value) document.getElementById('redeem-date').value = today;
+  if (!document.getElementById('div-date').value) document.getElementById('div-date').value = today;
+
+  // 分红再投资行初始显示
+  onDivTypeChange();
+}
+
+/** 申购表单渠道下拉变化 */
+function onSubChannelChange() {
+  const sel = document.getElementById('sub-channel');
+  const newInput = document.getElementById('sub-channel-new');
+  if (sel.value === '__new__') {
+    newInput.style.display = 'block';
+    newInput.focus();
+  } else {
+    newInput.style.display = 'none';
+  }
+}
+
+/** 执行申购 */
+function doSubscribe() {
+  const name = document.getElementById('sub-name').value.trim();
+  const code = document.getElementById('sub-code').value.trim();
+  let channel = document.getElementById('sub-channel').value;
+  const channelNew = document.getElementById('sub-channel-new').value.trim();
+  const shares = parseFloat(document.getElementById('sub-shares').value);
+  const nav = parseFloat(document.getElementById('sub-nav').value);
+  const amount = parseFloat(document.getElementById('sub-amount').value);
+  const date = document.getElementById('sub-date').value;
+
+  if (channel === '__new__') {
+    if (!channelNew) { alert('请输入新渠道名称'); return; }
+    channel = channelNew;
+  }
+
+  if (!name) { alert('请输入基金名称'); return; }
+  if (!channel) { alert('请选择购买渠道'); return; }
+  if (isNaN(shares) || shares <= 0) { alert('请输入有效份额'); return; }
+  if (isNaN(nav) || nav <= 0) { alert('请输入有效净值'); return; }
+  if (isNaN(amount) || amount <= 0) { alert('请输入有效金额'); return; }
+  if (!date) { alert('请选择购买日期'); return; }
+
+  if (!confirm(`确认申购 ${name}？\n份额：${fmt(shares,2)}\n净值：${nav.toFixed(4)}\n金额：${fmt(amount)}\n日期：${date}`)) return;
+
+  subscribeFund(name, code, channel, shares, nav, amount, date);
+  alert('✅ 申购成功！');
+
+  // 清空表单
+  document.getElementById('sub-name').value = '';
+  document.getElementById('sub-code').value = '';
+  document.getElementById('sub-channel').value = '';
+  document.getElementById('sub-channel-new').value = '';
+  document.getElementById('sub-channel-new').style.display = 'none';
+  document.getElementById('sub-shares').value = '';
+  document.getElementById('sub-nav').value = '';
+  document.getElementById('sub-amount').value = '';
+
+  renderOverview();
+}
+
+/** 执行赎回 */
+function doRedeem() {
+  const fundId = document.getElementById('redeem-fund').value;
+  const date = document.getElementById('redeem-date').value;
+  const amount = parseFloat(document.getElementById('redeem-amount').value);
+
+  if (!fundId) { alert('请选择基金'); return; }
+  if (!date) { alert('请选择赎回日期'); return; }
+  if (isNaN(amount) || amount <= 0) { alert('请输入有效的到账金额'); return; }
+
+  const fund = getFund(fundId);
+  if (!fund) { alert('基金不存在'); return; }
+
+  if (!confirm(`⚠️ 确认赎回 ${fund.name}？\n到账金额：${fmt(amount)}\n赎回日期：${date}\n\n此操作不可撤销！`)) return;
+
+  redeemFund(fundId, date, amount);
+  alert('✅ 赎回成功！');
+
+  document.getElementById('redeem-amount').value = '';
+  renderOverview();
+}
+
+/** 分红方式变化 */
+function onDivTypeChange() {
+  const divType = document.getElementById('div-type').value;
+  const reinvestRow = document.getElementById('div-reinvest-row');
+  reinvestRow.style.display = divType === 'reinvest' ? 'flex' : 'none';
+}
+
+/** 分红基金变化时填充净值 */
+function onDivFundChange() {
+  // 可选：自动填充最新净值
+}
+
+/** 执行分红 */
+function doDividend() {
+  const fundId = document.getElementById('div-fund').value;
+  const divType = document.getElementById('div-type').value;
+  const amount = parseFloat(document.getElementById('div-amount').value);
+  const date = document.getElementById('div-date').value;
+
+  if (!fundId) { alert('请选择基金'); return; }
+  if (isNaN(amount) || amount <= 0) { alert('请输入有效的分红金额'); return; }
+  if (!date) { alert('请选择分红日期'); return; }
+
+  const fund = getFund(fundId);
+  if (!fund) { alert('基金不存在'); return; }
+
+  let divShares = 0;
+  let divNav = null;
+
+  if (divType === 'reinvest') {
+    divShares = parseFloat(document.getElementById('div-shares').value);
+    divNav = parseFloat(document.getElementById('div-nav').value);
+    if (isNaN(divShares) || divShares <= 0) { alert('请输入有效的分红份额'); return; }
+    if (isNaN(divNav) || divNav <= 0) { alert('请输入有效的分红日净值'); return; }
+  }
+
+  const typeLabel = divType === 'reinvest' ? '再投资' : '现金分红';
+  if (!confirm(`确认 ${fund.name} ${typeLabel}？\n金额：${fmt(amount)}${divType === 'reinvest' ? `\n份额：+${fmt(divShares,2)}\n净值：${divNav.toFixed(4)}` : ''}\n日期：${date}`)) return;
+
+  dividendFund(fundId, divType, amount, date, divShares, divNav);
+  alert('✅ 分红操作成功！');
+
+  document.getElementById('div-amount').value = '';
+  document.getElementById('div-shares').value = '';
+  document.getElementById('div-nav').value = '';
+  renderOverview();
+}
+
+// ═══════════════════════════════════════════════════════
 // 历史记录
 // ═══════════════════════════════════════════════════════
+/** 历史记录Tab切换 */
+function switchHistTab(tab) {
+  document.querySelectorAll('.hist-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.hist-tab-content').forEach(c => c.classList.remove('active'));
+  if (tab === 'nav') {
+    document.querySelector('.hist-tab:nth-child(1)').classList.add('active');
+    document.getElementById('hist-nav-content').classList.add('active');
+  } else {
+    document.querySelector('.hist-tab:nth-child(2)').classList.add('active');
+    document.getElementById('hist-txn-content').classList.add('active');
+    renderTransactionHistory();
+  }
+}
+
 function buildHistFilter() {
   const sel = document.getElementById('hist-filter');
   const cur = sel.value;
-  sel.innerHTML = '<option value="all">全部</option>' + ACTIVE_FUNDS.map(f=>`<option value="${f.id}">${f.name}</option>`).join('');
+  const activeFunds = getActiveFunds();
+  sel.innerHTML = '<option value="all">全部</option>' + activeFunds.map(f=>`<option value="${f.id}">${f.name}</option>`).join('');
   if (cur) sel.value = cur;
 }
 
 function renderHistory() {
   const recs = getRecs();
+  const activeFunds = getActiveFunds();
   const fundFilter = document.getElementById('hist-filter').value;
   const dateFrom = document.getElementById('hist-date-from').value;
   const dateTo = document.getElementById('hist-date-to').value;
@@ -1185,7 +1785,7 @@ function renderHistory() {
     return true;
   });
 
-  const fundsToShow = fundFilter === 'all' ? ACTIVE_FUNDS : ACTIVE_FUNDS.filter(f=>f.id===fundFilter);
+  const fundsToShow = fundFilter === 'all' ? activeFunds : activeFunds.filter(f=>f.id===fundFilter);
   const rows = [];
   for (const rec of filtered) {
     for (const f of fundsToShow) {
@@ -1218,15 +1818,43 @@ function renderHistory() {
     </tr>`).join('');
 }
 
+/** 渲染交易记录 */
+function renderTransactionHistory() {
+  const txns = getTransactions();
+  const tbody = document.getElementById('txn-tbody');
+  if (!txns.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text3)">暂无交易记录</td></tr>';
+    return;
+  }
+  const sorted = [...txns].sort((a,b) => b.date.localeCompare(a.date));
+  tbody.innerHTML = sorted.map(t => {
+    let typeBadge = '';
+    if (t.type === 'subscribe') typeBadge = '<span class="txn-type-badge txn-type-subscribe">申购</span>';
+    else if (t.type === 'redeem') typeBadge = '<span class="txn-type-badge txn-type-redeem">赎回</span>';
+    else if (t.type === 'dividend_reinvest') typeBadge = '<span class="txn-type-badge txn-type-dividend">分红再投资</span>';
+    else if (t.type === 'dividend_cash') typeBadge = '<span class="txn-type-badge txn-type-dividend">现金分红</span>';
+    else typeBadge = `<span class="txn-type-badge">${t.type}</span>`;
+    return `<tr>
+      <td>${t.date}</td>
+      <td>${t.fundName}</td>
+      <td>${typeBadge}</td>
+      <td>${fmt(t.amount)}</td>
+      <td>${t.shares ? fmt(t.shares, 2) : '—'}</td>
+      <td>${t.nav ? t.nav.toFixed(4) : '—'}</td>
+      <td style="text-align:left;font-size:12px;color:var(--text2)">${t.note || ''}</td>
+    </tr>`;
+  }).join('');
+}
+
 function delRec(date) {
   if (!confirm(`确定删除 ${date} 的所有净值记录？`)) return;
-  setRecs(getRecs().filter(r=>r.date!==date));
+  setRecsRaw(getRecs().filter(r=>r.date!==date));
   renderHistory();
   renderOverview();
 }
 
 // ═══════════════════════════════════════════════════════
-// 云同步（GitHub Gist）
+// 云同步（GitHub Gist）— V2 格式
 // ═══════════════════════════════════════════════════════
 const SYNC_GIST_FILE = 'fund_tracker_data.json';
 let _ghToken = localStorage.getItem('fund_gh_token') || '';
@@ -1239,6 +1867,99 @@ function updateSyncBadge() {
   const btn = document.getElementById('navSyncBtn');
   if (_gistUrl && _ghToken) { btn.className = 'nav-sync synced'; btn.textContent = '☁️'; }
   else { btn.className = 'nav-sync unsynced'; btn.textContent = '☁️'; }
+}
+
+/** 构建 V2 格式数据 */
+function buildV2Data() {
+  return {
+    version: 2,
+    records: getRecs(),
+    funds: getFunds(),
+    transactions: getTransactions()
+  };
+}
+
+/** 合并 V2 同步数据 */
+function mergeSyncData(cloudData) {
+  if (!cloudData) return;
+
+  // 兼容 V1 格式（纯数组）
+  if (Array.isArray(cloudData)) {
+    const localRecs = getRecs();
+    const localDates = new Set(localRecs.map(r => r.date));
+    let merged = [...localRecs];
+    for (const cr of cloudData) {
+      if (!localDates.has(cr.date)) merged.push(cr);
+      else {
+        const localR = localRecs.find(r => r.date === cr.date);
+        if (Object.keys(cr.funds).length > Object.keys(localR.funds).length) {
+          merged = merged.map(r => r.date === cr.date ? cr : r);
+        }
+      }
+    }
+    setRecsRaw(merged);
+    return;
+  }
+
+  // V2 格式
+  if (cloudData.version === 2) {
+    // 合并 records（按日期合并）
+    if (Array.isArray(cloudData.records)) {
+      const localRecs = getRecs();
+      const localDates = new Set(localRecs.map(r => r.date));
+      let mergedRecs = [...localRecs];
+      for (const cr of cloudData.records) {
+        if (!localDates.has(cr.date)) {
+          mergedRecs.push(cr);
+        } else {
+          const localR = localRecs.find(r => r.date === cr.date);
+          // 合并同日期的基金净值，取基金数量更多的
+          const localFundKeys = Object.keys(localR.funds || {});
+          const cloudFundKeys = Object.keys(cr.funds || {});
+          if (cloudFundKeys.length > localFundKeys.length) {
+            mergedRecs = mergedRecs.map(r => r.date === cr.date ? cr : r);
+          } else {
+            // 本地可能有些基金没有，合并进去
+            const target = mergedRecs.find(r => r.date === cr.date);
+            if (target) {
+              for (const [fid, fval] of Object.entries(cr.funds || {})) {
+                if (target.funds[fid] == null) {
+                  target.funds[fid] = fval;
+                }
+              }
+            }
+          }
+        }
+      }
+      setRecsRaw(mergedRecs);
+    }
+
+    // 合并 funds（按 ID 去重，本地优先）
+    if (Array.isArray(cloudData.funds)) {
+      const localFunds = getFunds();
+      const localIds = new Set(localFunds.map(f => f.id));
+      let mergedFunds = [...localFunds];
+      for (const cf of cloudData.funds) {
+        if (!localIds.has(cf.id)) {
+          mergedFunds.push(cf);
+        }
+      }
+      setFunds(mergedFunds);
+    }
+
+    // 合并 transactions（按 ID 去重，本地优先）
+    if (Array.isArray(cloudData.transactions)) {
+      const localTxns = getTransactions();
+      const localTxnIds = new Set(localTxns.map(t => t.id));
+      let mergedTxns = [...localTxns];
+      for (const ct of cloudData.transactions) {
+        if (!localTxnIds.has(ct.id)) {
+          mergedTxns.push(ct);
+        }
+      }
+      setTransactions(mergedTxns);
+    }
+  }
 }
 
 function openSyncModal() {
@@ -1323,10 +2044,8 @@ async function setupGithubToken() {
         if (file && file.content) {
           try {
             const parsed = JSON.parse(file.content);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              setRecs(parsed);
-              shouldLoadFromGist = true;
-            }
+            mergeSyncData(parsed);
+            shouldLoadFromGist = true;
           } catch(e) {}
         }
         statusEl.innerHTML = '✅ 已绑定已有 Gist' + (shouldLoadFromGist ? '，数据已同步' : '');
@@ -1338,7 +2057,7 @@ async function setupGithubToken() {
       const payload = {
         description: '私募基金看板数据 (fund-tracker)',
         public: true,
-        files: { [SYNC_GIST_FILE]: { content: JSON.stringify(getRecs(), null, 2) } }
+        files: { [SYNC_GIST_FILE]: { content: JSON.stringify(buildV2Data(), null, 2) } }
       };
       const r = await fetch('https://api.github.com/gists', {
         method: 'POST',
@@ -1386,26 +2105,7 @@ async function autoSyncNow() {
       const file = data.files && data.files[SYNC_GIST_FILE];
       if (file && file.content) {
         const parsed = JSON.parse(file.content);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          // 合并策略：云端和本地取较新的
-          const localRecs = getRecs();
-          const localDates = new Set(localRecs.map(r => r.date));
-          const cloudDates = new Set(parsed.map(r => r.date));
-          // 云端有本地没有的日期
-          let merged = [...localRecs];
-          for (const cr of parsed) {
-            if (!localDates.has(cr.date)) merged.push(cr);
-            else {
-              // 同一日期，取基金数量更多的（更新更全的）
-              const localR = localRecs.find(r => r.date === cr.date);
-              if (Object.keys(cr.funds).length > Object.keys(localR.funds).length) {
-                merged = merged.map(r => r.date === cr.date ? cr : r);
-              }
-            }
-          }
-          // 本地有云端没有的日期也保留
-          setRecs(merged);
-        }
+        mergeSyncData(parsed);
       }
     }
     // 推送合并后的数据到云端
@@ -1425,7 +2125,7 @@ async function autoSyncToGist() {
   try {
     const payload = {
       description: '私募基金看板数据 (fund-tracker)',
-      files: { [SYNC_GIST_FILE]: { content: JSON.stringify(getRecs(), null, 2) } }
+      files: { [SYNC_GIST_FILE]: { content: JSON.stringify(buildV2Data(), null, 2) } }
     };
     await fetch('https://api.github.com/gists/' + _gistId, {
       method: 'PATCH',
@@ -1451,23 +2151,8 @@ async function loadFromGist() {
         const file = data.files && data.files[SYNC_GIST_FILE];
         if (file && file.content) {
           const parsed = JSON.parse(file.content);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            // 合并本地和云端
-            const localRecs = getRecs();
-            const localDates = new Set(localRecs.map(r => r.date));
-            let merged = [...localRecs];
-            for (const cr of parsed) {
-              if (!localDates.has(cr.date)) merged.push(cr);
-              else {
-                const localR = localRecs.find(r => r.date === cr.date);
-                if (Object.keys(cr.funds).length > Object.keys(localR.funds).length) {
-                  merged = merged.map(r => r.date === cr.date ? cr : r);
-                }
-              }
-            }
-            setRecs(merged);
-            return true;
-          }
+          mergeSyncData(parsed);
+          return true;
         }
       }
     }
@@ -1476,30 +2161,16 @@ async function loadFromGist() {
     const r2 = await fetch(rawUrl);
     if (r2.ok) {
       const parsed = await r2.json();
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        const localRecs = getRecs();
-        const localDates = new Set(localRecs.map(r => r.date));
-        let merged = [...localRecs];
-        for (const cr of parsed) {
-          if (!localDates.has(cr.date)) merged.push(cr);
-          else {
-            const localR = localRecs.find(r => r.date === cr.date);
-            if (Object.keys(cr.funds).length > Object.keys(localR.funds).length) {
-              merged = merged.map(r => r.date === cr.date ? cr : r);
-            }
-          }
-        }
-        setRecs(merged);
-        return true;
-      }
+      mergeSyncData(parsed);
+      return true;
     }
   } catch(e) { /* fall through */ }
   return false;
 }
 
-// 导出/导入
+// 导出/导入 — V2 格式
 function exportData() {
-  const data = JSON.stringify(getRecs(), null, 2);
+  const data = JSON.stringify(buildV2Data(), null, 2);
   const blob = new Blob([data], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
@@ -1514,24 +2185,11 @@ function importDataFile(input) {
   reader.onload = e => {
     try {
       const parsed = JSON.parse(e.target.result);
-      if (!Array.isArray(parsed)) throw new Error('格式错误');
-      if (!confirm(`导入 ${parsed.length} 条记录？将与本地数据合并（不覆盖已有日期）。`)) return;
-      const localRecs = getRecs();
-      const localDates = new Set(localRecs.map(r => r.date));
-      let merged = [...localRecs];
-      for (const cr of parsed) {
-        if (!localDates.has(cr.date)) merged.push(cr);
-        else {
-          const localR = localRecs.find(r => r.date === cr.date);
-          if (Object.keys(cr.funds).length > Object.keys(localR.funds).length) {
-            merged = merged.map(r => r.date === cr.date ? cr : r);
-          }
-        }
-      }
-      setRecs(merged);
+      if (!confirm('确认导入数据？将与本地数据合并。')) return;
+      mergeSyncData(parsed);
       renderOverview();
       closeSyncModal();
-      alert('导入成功！共 ' + merged.length + ' 条记录');
+      alert('导入成功！');
       autoSyncToGist();
     } catch(e) {
       alert('导入失败：' + e.message);
@@ -1541,10 +2199,10 @@ function importDataFile(input) {
   input.value = '';
 }
 
-// 修改 setRecs 使其自动同步
-const _origSetRecs = setRecs;
-setRecs = function(arr) {
-  _origSetRecs(arr);
+// 修改 setRecsRaw 使其自动同步
+const _origSetRecsRaw = setRecsRaw;
+setRecsRaw = function(arr) {
+  _origSetRecsRaw(arr);
   autoSyncToGist();
 };
 
@@ -1553,8 +2211,8 @@ setRecs = function(arr) {
 // ═══════════════════════════════════════════════════════
 (async function init() {
   updateSyncBadge();
-  initSeed();
-  migrateAddLQ();
+  migrateV1ToV2();  // T01: 先迁移
+  initSeed();        // 初始化种子净值数据
   // 尝试从 Gist 加载（如果已配置）
   if (_gistId) {
     await loadFromGist();
