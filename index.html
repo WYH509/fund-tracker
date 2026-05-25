@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>私募基金看板</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
 :root {
   --bg: #f2f2f7;
@@ -802,50 +802,54 @@ const cc   = (n)      => n > 0 ? 'up' : n < 0 ? 'down' : 'neutral';
 
 // 导出PDF
 function exportPDF(type) {
-  if (!window.html2pdf) { alert('PDF生成失败，请刷新页面重试'); return; }
+  if (typeof html2pdf === 'undefined') {
+    alert('PDF组件未加载，请检查网络后刷新页面重试。\n如仍不行，可使用「打印」按钮，在打印对话框选择「另存为PDF」。');
+    return;
+  }
   const recs = getRecords();
   const latest = recs.length ? recs[recs.length - 1] : null;
   const navDate = latest ? latest.date : '—';
   const navDateCN = navDate.replace(/-/g, '/').replace(/^(\d{4})\//, '$1年').replace(/(\d{2})\//, '$1月').replace(/(\d{2})$/, '$1日');
-  let tableEl = null;
-  if (type === 'overview') {
-    tableEl = document.getElementById('ov-table');
-  } else {
-    tableEl = document.getElementById('monthly-tbl');
-  }
-  if (!tableEl) { alert('未找到表格数据'); return; }
   const title = type === 'overview' ? '各基金收益明细' : '月度收益统计';
-  // 克隆表格并清理sticky定位
-  const clone = tableEl.cloneNode(true);
-  clone.querySelectorAll('.col-sticky').forEach(el => el.classList.remove('col-sticky'));
-  clone.style.position = 'static';
+  const srcId = type === 'overview' ? 'ov-table' : 'monthly-tbl';
+  const srcTbl = document.getElementById(srcId);
+  if (!srcTbl) { alert('未找到表格'); return; }
+
+  // 克隆表格，去掉sticky
+  const clone = srcTbl.cloneNode(true);
+  clone.querySelectorAll('.col-sticky').forEach(el => { el.style.position = 'static'; el.classList.remove('col-sticky'); });
+  clone.style.width = '100%';
+
   const wrap = document.createElement('div');
-  wrap.id = 'pdf-temp';
-  wrap.style.cssText = 'position:fixed;left:-9999px;top:0;padding:8px 12px;font-family:-apple-system,BlinkMacSystemFont,PingFang SC,sans-serif;font-size:10px;color:#1c1c1e;background:#fff;width:1050px;';
   wrap.innerHTML = `
-    <style>table{border-collapse:collapse;width:100%;font-size:10px;} th,td{border:1px solid #ddd;padding:3px 5px;text-align:right;white-space:nowrap;} th{background:#f5f5f5;font-weight:600;text-align:center;} td:first-child,th:first-child{text-align:left;} .up{color:#ff3b30;} .down{color:#34c759;} .td-rate{font-size:9px;} .redeem-badge{background:#ff9500;color:#fff;padding:1px 6px;border-radius:8px;font-size:9px;} .tbl-total td{font-weight:700;border-top:2px solid #333;}</style>
-    <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px;">
-      <h2 style="font-size:14px;margin:0;">私募基金 · ${title}</h2>
-      <span style="font-size:11px;color:#636366;">净值日期：${navDateCN}</span>
+    <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;font-family:-apple-system,BlinkMacSystemFont,PingFang SC,sans-serif;">
+      <div style="font-size:15px;font-weight:700;">私募基金 · ${title}</div>
+      <div style="font-size:11px;color:#666;">净值日期：${navDateCN}</div>
     </div>
-    <div>${clone.outerHTML}</div>`;
+    <div style="font-family:-apple-system,BlinkMacSystemFont,PingFang SC,sans-serif;font-size:10px;">
+      ${clone.outerHTML}
+    </div>`;
+  // 内联表格样式
+  const s = document.createElement('style');
+  s.textContent = '#pdf-temp table{border-collapse:collapse;width:100%;} #pdf-temp th,#pdf-temp td{border:1px solid #ccc;padding:3px 5px;white-space:nowrap;} #pdf-temp th{background:#f0f0f0;text-align:center;font-weight:600;} #pdf-temp .td-rate{font-size:8px;} #pdf-temp .redeem-badge{background:#ff9500;color:#fff;padding:1px 5px;border-radius:6px;font-size:8px;} #pdf-temp .tbl-total td{font-weight:700;border-top:2px solid #333;}';
+  wrap.prepend(s);
+  wrap.id = 'pdf-temp';
+  wrap.style.cssText = 'position:absolute;left:-9999px;top:0;padding:10px 15px;background:#fff;width:1060px;';
   document.body.appendChild(wrap);
-  // 延迟渲染确保DOM就绪
-  setTimeout(() => {
-    html2pdf().set({
-      margin: [5,5,5,5],
-      filename: `私募基金_${title}_${navDate}.pdf`,
-      image: { type: 'jpeg', quality: 0.95 },
-      html2canvas: { scale: 2, useCORS: true },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
-    }).from(wrap).save().then(() => {
-      document.body.removeChild(wrap);
-    }).catch((e) => {
-      console.error('PDF error', e);
-      if (document.getElementById('pdf-temp')) document.body.removeChild(wrap);
-      alert('PDF生成失败：' + (e.message || '未知错误'));
-    });
-  }, 300);
+
+  html2pdf().from(wrap).set({
+    margin: [8, 8, 8, 8],
+    filename: `私募基金_${title}_${navDate}.pdf`,
+    image: { type: 'jpeg', quality: 0.95 },
+    html2canvas: { scale: 2, useCORS: true, logging: false },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+  }).save().then(() => {
+    if (document.getElementById('pdf-temp')) document.body.removeChild(wrap);
+  }).catch(err => {
+    console.error('PDF error:', err);
+    if (document.getElementById('pdf-temp')) document.body.removeChild(wrap);
+    alert('PDF生成失败，请使用「打印」按钮，在打印对话框选择「另存为PDF」。');
+  });
 }
 
 // 找某日期之前最近一条记录（不含当天），且该基金有净值
