@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>私募基金看板</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
 <style>
 :root {
   --bg: #f2f2f7;
@@ -230,7 +231,7 @@ td:nth-child(3), th:nth-child(3) { white-space: nowrap; }
     <div class="stat-grid" id="ov-stats"></div>
   </div>
   <div class="card">
-    <div class="card-title">🏦 各基金收益明细 <button class="btn btn-ghost btn-sm" onclick="window.print()" style="margin-left:auto">🖨 打印</button></div>
+    <div class="card-title">🏦 各基金收益明细 <div style="margin-left:auto;display:flex;gap:6px"><button class="btn btn-ghost btn-sm" onclick="window.print()">🖨 打印</button><button class="btn btn-ghost btn-sm" onclick="exportPDF('overview')">📄 PDF</button></div></div>
     <div class="tbl-wrap">
       <table id="ov-table">
         <thead>
@@ -297,7 +298,7 @@ td:nth-child(3), th:nth-child(3) { white-space: nowrap; }
 <!-- ══ 月度收益 ══ -->
 <div id="page-monthly" class="page">
   <div class="card">
-    <div class="card-title">📅 月度收益统计 <button class="btn btn-ghost btn-sm" onclick="window.print()" style="margin-left:auto">🖨 打印</button></div>
+    <div class="card-title">📅 月度收益统计 <div style="margin-left:auto;display:flex;gap:6px"><button class="btn btn-ghost btn-sm" onclick="window.print()">🖨 打印</button><button class="btn btn-ghost btn-sm" onclick="exportPDF('monthly')">📄 PDF</button></div></div>
     <div class="form-row" style="margin-bottom:16px">
       <div class="form-group">
         <label>年份</label>
@@ -798,6 +799,30 @@ const fmt  = (n, d=0) => n == null || isNaN(n) ? '—' : n.toLocaleString('zh-CN
 const fmtP = (n, d=2) => n == null || isNaN(n) ? '—' : (n>=0?'+':'') + (n*100).toFixed(d) + '%';
 const fmtW = (n) => { if(n==null||isNaN(n)) return '—'; const w=n/10000; const s=w%1===0?w.toLocaleString('zh-CN',{maximumFractionDigits:0}):w.toLocaleString('zh-CN',{maximumFractionDigits:2}); return s+'万元'; };
 const cc   = (n)      => n > 0 ? 'up' : n < 0 ? 'down' : 'neutral';
+
+// 导出PDF
+function exportPDF(type) {
+  const pageId = type === 'overview' ? 'page-overview' : 'page-monthly';
+  const title  = type === 'overview' ? '各基金收益明细' : '月度收益统计';
+  const el = document.getElementById(pageId);
+  if (!el || !window.html2pdf) { alert('PDF生成失败，请刷新页面重试'); return; }
+  // 克隆并清理：去掉按钮、图表、统计卡片
+  const clone = el.cloneNode(true);
+  clone.querySelectorAll('button, canvas, .chart-container, .chart-container-sm, .stat-grid, .form-row, .notice, #monthly-year').forEach(n => n.remove());
+  clone.querySelectorAll('.card-title').forEach(t => { t.innerHTML = t.textContent.replace(/打印|PDF/g, '').trim(); });
+  // 临时容器
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'padding:20px;font-family:-apple-system,BlinkMacSystemFont,PingFang SC,sans-serif;font-size:12px;color:#1c1c1e;background:#fff;';
+  wrap.innerHTML = `<h2 style="text-align:center;margin-bottom:16px;font-size:16px;">私募基金看板 · ${title}</h2>` + clone.innerHTML;
+  document.body.appendChild(wrap);
+  html2pdf().set({
+    margin: [10,10,10,10],
+    filename: `私募基金_${title}_${new Date().toISOString().slice(0,10)}.pdf`,
+    image: { type: 'jpeg', quality: 0.95 },
+    html2canvas: { scale: 2, useCORS: true },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+  }).from(wrap).save().then(() => { document.body.removeChild(wrap); }).catch(() => { document.body.removeChild(wrap); alert('PDF生成失败'); });
+}
 
 // 找某日期之前最近一条记录（不含当天），且该基金有净值
 function prevRec(recs, date, fundId) {
