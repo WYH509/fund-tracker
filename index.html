@@ -76,6 +76,7 @@ th:first-child, td:first-child { text-align: left; }
 td { padding: 9px 12px; border-bottom: 1px solid var(--border); text-align: right; vertical-align: middle; }
 tr:last-child td { border-bottom: none; }
 tr:hover td { background: #fafafa; }
+tr:hover .col-sticky { background: #fafafa; }
 .tbl-total td { font-weight: 700; background: var(--bg) !important; border-top: 2px solid var(--border); }
 
 /* FUND INPUT GRID */
@@ -163,6 +164,32 @@ tr:hover td { background: #fafafa; }
 td:nth-child(2), th:nth-child(2),
 td:nth-child(3), th:nth-child(3) { white-space: nowrap; }
 
+/* 概览表 - 基金名称列固定 */
+#ov-table .col-sticky {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--card);
+  text-align: left;
+  min-width: 120px;
+  max-width: 180px;
+  white-space: nowrap;
+  box-shadow: 2px 0 6px -2px rgba(0,0,0,.08);
+}
+#ov-table thead .col-sticky {
+  background: var(--bg);
+  z-index: 3;
+}
+.tbl-total .col-sticky { background: var(--bg) !important; }
+
+/* 收益单元格内的收益率副文字 */
+.td-rate { font-size: 11px; margin-top: 2px; font-weight: 500; }
+.td-rate.up   { color: #ff3b30; }
+.td-rate.down { color: #34c759; }
+
+/* 表头副文字 */
+.th-sub { font-size: 10px; font-weight: 400; color: var(--text3); }
+
 /* 打印样式 */
 @media print {
   body { background: #fff; }
@@ -205,21 +232,21 @@ td:nth-child(3), th:nth-child(3) { white-space: nowrap; }
   <div class="card">
     <div class="card-title">🏦 各基金收益明细 <button class="btn btn-ghost btn-sm" onclick="window.print()" style="margin-left:auto">🖨 打印</button></div>
     <div class="tbl-wrap">
-      <table>
+      <table id="ov-table">
         <thead>
           <tr>
-            <th>基金名称</th>
-            <th>状态</th>
-            <th>购买渠道</th>
+            <th class="col-sticky">基金名称</th>
+            <th>购买日期</th>
             <th>持有份额</th>
             <th>当前净值</th>
             <th>现值（元）</th>
             <th>成本</th>
-            <th>本周收益</th>
-            <th>本月收益</th>
-            <th>本年收益</th>
-            <th>总收益</th>
-            <th>总收益率</th>
+            <th>本周收益<br><span class="th-sub">收益率</span></th>
+            <th>本月收益<br><span class="th-sub">收益率</span></th>
+            <th>本年收益<br><span class="th-sub">收益率</span></th>
+            <th>总收益<br><span class="th-sub">收益率</span></th>
+            <th>状态</th>
+            <th>购买渠道</th>
           </tr>
         </thead>
         <tbody id="ov-tbody"></tbody>
@@ -1079,43 +1106,50 @@ function renderOverview() {
 
   // Table
   document.getElementById('ov-tbody').innerHTML = rows.map(r => {
+    // 单只基金收益率（基于成本）
+    const wRate = r.val > 0 ? r.weekP  / (r.val - r.weekP)  : null;
+    const mRate = r.val > 0 ? r.monthP / (r.val - r.monthP) : null;
+    const yBase = r.f.cost > 0 ? r.f.cost : null;
+    const yRate = yBase ? r.yearP / yBase : null;
+    const sub = (v) => v != null ? `<div class="td-rate ${v>=0?'up':'down'}">${fmtP(v)}</div>` : `<div class="td-rate">—</div>`;
     if (r.redeemed) return `
       <tr>
-        <td>${r.f.name}</td>
+        <td class="col-sticky">${r.f.name}</td>
+        <td>${r.f.buyDate||'—'}</td>
+        <td>—</td><td>—</td><td>—</td><td>${fmt(r.f.cost)}</td>
+        <td>—</td>
+        <td>—</td>
+        <td class="${cc(r.yearP)}">${fmt(r.yearP)}</td>
+        <td class="${cc(r.profit)}">${fmt(r.profit)}${sub(r.pRate)}</td>
         <td><span class="redeem-badge">已赎回</span></td>
         <td>${r.f.channel}</td>
-        <td>—</td><td>—</td><td>—</td><td>—</td>
-        <td>—</td><td>—</td>
-        <td class="${cc(r.yearP)}">${fmt(r.yearP)}</td>
-        <td class="${cc(r.profit)}">${fmt(r.profit)}</td>
-        <td>—</td>
       </tr>`;
     return `
       <tr>
-        <td>${r.f.name}</td>
-        <td><span class="badge badge-up">持仓中</span></td>
-        <td>${r.f.channel}</td>
+        <td class="col-sticky">${r.f.name}</td>
+        <td>${r.f.buyDate||'—'}</td>
         <td>${fmt(r.f.shares, 2)}</td>
         <td>${r.nav.toFixed(4)}</td>
         <td>${fmt(r.val)}</td>
         <td>${fmt(r.f.cost)}</td>
-        <td class="${cc(r.weekP)}">${fmt(r.weekP)}</td>
-        <td class="${cc(r.monthP)}">${fmt(r.monthP)}</td>
-        <td class="${cc(r.yearP)}">${fmt(r.yearP)}</td>
-        <td class="${cc(r.profit)}">${fmt(r.profit)}</td>
-        <td><span class="badge ${r.pRate>=0?'badge-up':'badge-down'}">${r.pRate!=null?fmtP(r.pRate):'—'}</span></td>
+        <td class="${cc(r.weekP)}">${fmt(r.weekP)}${sub(wRate)}</td>
+        <td class="${cc(r.monthP)}">${fmt(r.monthP)}${sub(mRate)}</td>
+        <td class="${cc(r.yearP)}">${fmt(r.yearP)}${sub(yRate)}</td>
+        <td class="${cc(r.profit)}">${fmt(r.profit)}${sub(r.pRate)}</td>
+        <td><span class="badge badge-up">持仓中</span></td>
+        <td>${r.f.channel}</td>
       </tr>`;
   }).join('') + `
     <tr class="tbl-total">
-      <td>合计</td>
-      <td>—</td><td>—</td><td>—</td><td>—</td>
+      <td class="col-sticky">合计</td>
+      <td>—</td><td>—</td><td>—</td>
       <td class="${cc(totalVal)}">${fmt(totalVal)}</td>
       <td>${fmt(totalCost)}</td>
-      <td class="${cc(totalWeekP)}">${fmt(totalWeekP)}</td>
-      <td class="${cc(totalMonthP)}">${fmt(totalMonthP)}</td>
-      <td class="${cc(totalYearPAll)}">${fmt(totalYearPAll)}</td>
-      <td class="${cc(totalP)}">${fmt(totalP)}</td>
-      <td><span class="badge ${totalRate>=0?'badge-up':'badge-down'}">${fmtP(totalRate)}</span></td>
+      <td class="${cc(totalWeekP)}">${fmt(totalWeekP)}<div class="td-rate ${weekRate>=0?'up':'down'}">${fmtP(weekRate)}</div></td>
+      <td class="${cc(totalMonthP)}">${fmt(totalMonthP)}<div class="td-rate ${monthRate>=0?'up':'down'}">${fmtP(monthRate)}</div></td>
+      <td class="${cc(totalYearPAll)}">${fmt(totalYearPAll)}<div class="td-rate ${yearRate>=0?'up':'down'}">${fmtP(yearRate)}</div></td>
+      <td class="${cc(totalP)}">${fmt(totalP)}<div class="td-rate ${totalRate>=0?'up':'down'}">${fmtP(totalRate)}</div></td>
+      <td>—</td><td>—</td>
     </tr>`;
 }
 
