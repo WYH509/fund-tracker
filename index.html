@@ -800,7 +800,7 @@ function migrateShortNames() {
 // ═══════════════════════════════════════════════════════
 const fmt  = (n, d=0) => n == null || isNaN(n) ? '—' : n.toLocaleString('zh-CN', {minimumFractionDigits:d,maximumFractionDigits:d});
 const fmtP = (n, d=2) => n == null || isNaN(n) ? '—' : (n>=0?'+':'') + (n*100).toFixed(d) + '%';
-const fmtW = (n) => n == null || isNaN(n) ? '—' : (n/10000).toLocaleString('zh-CN', {minimumFractionDigits:2,maximumFractionDigits:2}) + '万元';
+const fmtW = (n) => { if(n==null||isNaN(n)) return '—'; const w=n/10000; const s=w%1===0?w.toLocaleString('zh-CN',{maximumFractionDigits:0}):w.toLocaleString('zh-CN',{maximumFractionDigits:2}); return s+'万元'; };
 const cc   = (n)      => n > 0 ? 'up' : n < 0 ? 'down' : 'neutral';
 
 // 找某日期之前最近一条记录（不含当天），且该基金有净值
