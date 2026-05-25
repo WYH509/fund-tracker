@@ -836,17 +836,24 @@ function exportPDF(type) {
   .redeem-badge { background: #ff9500; color: #fff; padding: 1px 5px; border-radius: 6px; font-size: 8px; }
   .tbl-total td { font-weight: 700; border-top: 2px solid #333; }
   .badge { display: none; }
-  @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+  .print-hint { text-align: center; padding: 10px; font-size: 12px; color: #999; }
+  @media print { .print-hint { display: none; } body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
 </style></head><body>
+<div class="print-hint">👇 按 Ctrl+P 打印，目标打印机选「另存为PDF」即可下载PDF文件</div>
 <div class="header"><h2>私募基金 · ${yearLabel}${title}</h2><div class="date">净值日期：${navDateCN}</div></div>
 ${clone.outerHTML}
-<script>window.onload=function(){window.print();}<\/script>
 </body></html>`;
 
-  const w = window.open('', '_blank');
-  if (!w) { alert('弹窗被拦截，请允许弹窗后重试'); return; }
-  w.document.write(html);
-  w.document.close();
+  // 用 Blob 下载为 HTML 文件
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = '私募基金_' + title + '_' + navDate + '.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 // 找某日期之前最近一条记录（不含当天），且该基金有净值
