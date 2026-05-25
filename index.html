@@ -231,7 +231,7 @@ td:nth-child(3), th:nth-child(3) { white-space: nowrap; }
     <div class="stat-grid" id="ov-stats"></div>
   </div>
   <div class="card">
-    <div class="card-title">🏦 各基金收益明细 <div style="margin-left:auto;display:flex;gap:6px"><button class="btn btn-ghost btn-sm" onclick="window.print()">🖨 打印</button><button class="btn btn-ghost btn-sm" onclick="exportPDF('overview')">📄 PDF</button></div></div>
+    <div class="card-title">🏦 各基金收益明细 <span id="ov-nav-date" style="font-size:12px;color:var(--text3);font-weight:400;margin-left:8px;"></span><div style="margin-left:auto;display:flex;gap:6px"><button class="btn btn-ghost btn-sm" onclick="window.print()">🖨 打印</button><button class="btn btn-ghost btn-sm" onclick="exportPDF('overview')">📄 PDF</button></div></div>
     <div class="tbl-wrap">
       <table id="ov-table">
         <thead>
@@ -239,7 +239,6 @@ td:nth-child(3), th:nth-child(3) { white-space: nowrap; }
             <th class="col-sticky">基金名称</th>
             <th>购买日期</th>
             <th>持有份额</th>
-            <th>当前净值</th>
             <th>现值（元）</th>
             <th>成本（万元）</th>
             <th>本周收益<br><span class="th-sub">收益率</span></th>
@@ -1092,6 +1091,10 @@ function renderOverview() {
   const latest = sorted[0];
   if (!latest) { document.getElementById('ov-stats').innerHTML = '<div style="color:var(--text3);font-size:14px">暂无数据，请前往「录入净值」页面</div>'; document.getElementById('ov-tbody').innerHTML=''; return; }
   const latDate = latest.date;
+  // 显示净值日期
+  const latDateCN = latDate.replace(/-/g,'/').replace(/^(\d{4})\//,'$1年').replace(/(\d{2})\//,'$1月').replace(/(\d{2})$/,'$1日');
+  const navDateEl = document.getElementById('ov-nav-date');
+  if (navDateEl) navDateEl.textContent = '净值日期：' + latDateCN;
 
   let totalCost=0, totalVal=0, totalYearP=0, totalWeekP=0, totalMonthP=0, totalP=0;
 
@@ -1196,7 +1199,7 @@ function renderOverview() {
       <tr>
         <td class="col-sticky">${r.f.name}</td>
         <td>${r.f.buyDate||'—'}</td>
-        <td>—</td><td>—</td><td>—</td><td>${fmtW(r.f.cost)}</td>
+        <td>—</td><td>—</td><td>${fmtW(r.f.cost)}</td>
         <td>—</td>
         <td>—</td>
         <td class="${cc(r.yearP)}">${fmt(r.yearP)}</td>
@@ -1209,7 +1212,6 @@ function renderOverview() {
         <td class="col-sticky">${r.f.name}</td>
         <td>${r.f.buyDate||'—'}</td>
         <td>${fmt(r.f.shares, 2)}</td>
-        <td>${r.nav.toFixed(4)}</td>
         <td>${fmt(r.val)}</td>
         <td>${fmtW(r.f.cost)}</td>
         <td class="${cc(r.weekP)}">${fmt(r.weekP)}${sub(wRate)}</td>
@@ -1222,7 +1224,7 @@ function renderOverview() {
   }).join('') + `
     <tr class="tbl-total">
       <td class="col-sticky">合计</td>
-      <td>—</td><td>—</td><td>—</td>
+      <td>—</td><td>—</td>
       <td class="${cc(totalVal)}">${fmt(totalVal)}</td>
       <td>${fmtW(totalCost)}</td>
       <td class="${cc(totalWeekP)}">${fmt(totalWeekP)}<div class="td-rate ${weekRate>=0?'up':'down'}">${fmtP(weekRate)}</div></td>
