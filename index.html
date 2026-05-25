@@ -327,14 +327,10 @@ td:nth-child(3), th:nth-child(3) { white-space: nowrap; }
             <th>购买渠道</th>
             <th>持仓市值</th>
             <th>总成本（万元）</th>
-            <th>本周收益</th>
-            <th>本周收益率</th>
-            <th>本月收益</th>
-            <th>本月收益率</th>
-            <th>本年收益</th>
-            <th>本年收益率</th>
-            <th>总收益</th>
-            <th>总收益率</th>
+            <th>本周收益<br><span class="th-sub">收益率</span></th>
+            <th>本月收益<br><span class="th-sub">收益率</span></th>
+            <th>本年收益<br><span class="th-sub">收益率</span></th>
+            <th>总收益<br><span class="th-sub">收益率</span></th>
           </tr>
         </thead>
         <tbody id="ch-tbody"></tbody>
@@ -1575,32 +1571,25 @@ function renderChannel() {
   }
 
   // 表格
+  const sub = (v) => v != null ? `<div class="td-rate ${v>=0?'up':'down'}">${fmtP(v)}</div>` : `<div class="td-rate">—</div>`;
   document.getElementById('ch-tbody').innerHTML = chData.map(d => `
     <tr>
       <td style="font-weight:700;white-space:nowrap">${d.chName}</td>
       <td>${fmt(d.val)}</td>
       <td>${fmtW(d.cost)}</td>
-      <td class="${cc(d.weekP)}">${fmt(d.weekP)}</td>
-      <td><span class="badge ${d.weekRate>=0?'badge-up':'badge-down'}">${fmtP(d.weekRate)}</span></td>
-      <td class="${cc(d.monthP)}">${fmt(d.monthP)}</td>
-      <td><span class="badge ${d.monthRate>=0?'badge-up':'badge-down'}">${fmtP(d.monthRate)}</span></td>
-      <td class="${cc(d.yearP)}">${fmt(d.yearP)}</td>
-      <td><span class="badge ${d.yearRate>=0?'badge-up':'badge-down'}">${fmtP(d.yearRate)}</span></td>
-      <td class="${cc(d.profit)}">${fmt(d.profit)}</td>
-      <td><span class="badge ${d.totalRate>=0?'badge-up':'badge-down'}">${fmtP(d.totalRate)}</span></td>
+      <td class="${cc(d.weekP)}">${fmt(d.weekP)}${sub(d.weekRate)}</td>
+      <td class="${cc(d.monthP)}">${fmt(d.monthP)}${sub(d.monthRate)}</td>
+      <td class="${cc(d.yearP)}">${fmt(d.yearP)}${sub(d.yearRate)}</td>
+      <td class="${cc(d.profit)}">${fmt(d.profit)}${sub(d.totalRate)}</td>
     </tr>`).join('') + `
     <tr class="tbl-total">
       <td>合计</td>
       <td>${fmt(grandVal)}</td>
       <td>${fmtW(grandCost)}</td>
-      <td class="${cc(grandWeekP)}">${fmt(grandWeekP)}</td>
-      <td>—</td>
-      <td class="${cc(grandMonthP)}">${fmt(grandMonthP)}</td>
-      <td>—</td>
-      <td class="${cc(grandYearP)}">${fmt(grandYearP)}</td>
-      <td>—</td>
-      <td class="${cc(grandP)}">${fmt(grandP)}</td>
-      <td>—</td>
+      <td class="${cc(grandWeekP)}">${fmt(grandWeekP)}${sub(grandWeekP/(grandVal-grandWeekP)||null)}</td>
+      <td class="${cc(grandMonthP)}">${fmt(grandMonthP)}${sub(grandMonthP/(grandVal-grandMonthP)||null)}</td>
+      <td class="${cc(grandYearP)}">${fmt(grandYearP)}${sub(grandYearP/(grandVal-grandYearP)||null)}</td>
+      <td class="${cc(grandP)}">${fmt(grandP)}${sub(grandCost>0?grandP/grandCost:null)}</td>
     </tr>`;
 
   // 渠道收益对比图（金额）
