@@ -1255,6 +1255,9 @@ function fillLastNav() {
   const recs = getRecs();
   if (!recs.length) return;
   const latest = [...recs].sort((a,b) => b.date.localeCompare(a.date))[0];
+  // 同时填入上次日期
+  const dateEl = document.getElementById('input-date');
+  if (dateEl && latest.date) dateEl.value = latest.date;
   const activeFunds = getActiveFunds();
   activeFunds.forEach(f => {
     const el = document.getElementById('nav-'+f.id);
