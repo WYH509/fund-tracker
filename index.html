@@ -554,7 +554,7 @@ td:nth-child(3), th:nth-child(3) { white-space: nowrap; }
 // ═══════════════════════════════════════════════════════
 const SEED_FUNDS = [
   {
-    id: 'ys1', name: '衍盛稳进量化多策略一期', code: 'YS_WJ',
+    id: 'ys1', name: '衍盛稳进', code: 'YS_WJ',
     group: '衍盛资产', channel: '衍盛基金', status: 'redeemed',
     buyDate: '2021-01-15', cost: 0,
     shares: 0, yearStartNav: null,
@@ -562,43 +562,43 @@ const SEED_FUNDS = [
     redeemedTotalProfit: 936058
   },
   {
-    id: 'ys2', name: '衍盛指数增强1号', code: 'YS001',
+    id: 'ys2', name: '衍盛指增', code: 'YS001',
     group: '衍盛资产', channel: '衍盛基金', status: 'active',
     buyDate: '2021-01-15', cost: 27000000,
     shares: 18781451.95, yearStartNav: 2.181
   },
   {
-    id: 'hf', name: '幻方量化300指数专享16号11期', code: 'HF300',
+    id: 'hf', name: '幻方300', code: 'HF300',
     group: '招商证券', channel: '招商证券', status: 'active',
     buyDate: '2021-02-03', cost: 2020000,
     shares: 1793296.74, yearStartNav: 1.9034
   },
   {
-    id: 'lr1', name: '量锐指数增强1000一号A', code: 'LR1000',
+    id: 'lr1', name: '量锐1000', code: 'LR1000',
     group: '招商证券', channel: '招商证券', status: 'active',
     buyDate: '2021-07-21', cost: 3000000,
     shares: 2409586.3, yearStartNav: 2.1087
   },
   {
-    id: 'lr2', name: '量锐指增22号三期', code: 'LR22',
+    id: 'lr2', name: '量锐22', code: 'LR22',
     group: '招商证券', channel: '招商证券', status: 'active',
     buyDate: '2021-11-01', cost: 1010000,
     shares: 1010000, yearStartNav: 1.517
   },
   {
-    id: 'kd', name: '宽德鸿图7号一期', code: 'KDHT',
+    id: 'kd', name: '宽德', code: 'KDHT',
     group: '招商证券', channel: '招商证券', status: 'active',
     buyDate: '2025-05-23', cost: 5000000,
     shares: 6193512.78, yearStartNav: 1.0561
   },
   {
-    id: 'mh', name: '明汯股票精选招享3号', code: 'MQZX',
+    id: 'mh', name: '明泓', code: 'MQZX',
     group: '招商证券', channel: '招商证券', status: 'active',
     buyDate: '2025-08-08', cost: 5000000,
     shares: 5000000, yearStartNav: 1.0603
   },
   {
-    id: 'ze', name: '中欧中证1000指数增强', code: 'ZE1000',
+    id: 'ze', name: '中欧1000', code: 'ZE1000',
     group: '招商证券', channel: '招商证券', status: 'redeemed',
     buyDate: '2025-09-17', cost: 0,
     shares: 0, yearStartNav: null,
@@ -606,13 +606,13 @@ const SEED_FUNDS = [
     redeemedTotalProfit: 298887.64
   },
   {
-    id: 'lq', name: '龙旗科技创新精选15号6期', code: 'LQCX',
+    id: 'lq', name: '龙旗', code: 'LQCX',
     group: '招商证券', channel: '招商证券', status: 'active',
     buyDate: '2026-05-15', cost: 5000000,
     shares: 5002000.80, yearStartNav: 0.9995
   },
   {
-    id: 'zsfy', name: '招商财富-丰元联动108号', code: 'ZSFY',
+    id: 'zsfy', name: '招商丰元', code: 'ZSFY',
     group: '招商银行', channel: '招商银行', status: 'active',
     buyDate: '2026-03-09', cost: 5025000,
     shares: 5000523.43, yearStartNav: 1.0
@@ -765,6 +765,35 @@ function migrateV1ToV2() {
   }
   localStorage.setItem(MIG_V2_KEY, '1');
 }
+
+// 迁移：将已存基金列表中的旧名称更新为简化版名称
+function migrateShortNames() {
+  const MIG_KEY = 'migrated_short_names_v1';
+  if (localStorage.getItem(MIG_KEY)) return;
+  const NAME_MAP = {
+    'ys1': '衍盛稳进',
+    'ys2': '衍盛指增',
+    'hf':  '幻方300',
+    'lr1': '量锐1000',
+    'lr2': '量锐22',
+    'kd':  '宽德',
+    'mh':  '明泓',
+    'lq':  '龙旗',
+    'zsfy':'招商丰元',
+    'ze':  '中欧1000',
+  };
+  const funds = getFunds();
+  let changed = false;
+  funds.forEach(f => {
+    if (NAME_MAP[f.id] && f.name !== NAME_MAP[f.id]) {
+      f.name = NAME_MAP[f.id];
+      changed = true;
+    }
+  });
+  if (changed) setFunds(funds);
+  localStorage.setItem(MIG_KEY, '1');
+}
+
 
 // ═══════════════════════════════════════════════════════
 // 辅助函数
@@ -2247,6 +2276,7 @@ setRecsRaw = function(arr) {
 (async function init() {
   updateSyncBadge();
   migrateV1ToV2();  // T01: 先迁移
+  migrateShortNames(); // 更新基金简化名称
   initSeed();        // 初始化种子净值数据
   // 尝试从 Gist 加载（如果已配置）
   if (_gistId) {
